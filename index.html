@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Stock Prices Bar</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: rgb(11, 11, 11);
+        }
+        .stock-bar-container {
+            overflow: hidden;
+            white-space: nowrap;
+            background-color: #0c0c0c;
+        }
+        .stock-bar {
+            display: inline-block;
+            padding: 30px 0;
+        }
+        .stock-bar.one {
+            animation: scroll 30s linear infinite;
+            padding: 10px 0;
+
+        }
+        .stock-bar.two {
+            animation: scroll-reverse 30s linear infinite;
+            padding: 10px 0;
+
+        }
+        @keyframes scroll {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(-100%);
+            }
+        }
+        @keyframes scroll-reverse {
+            from {
+                transform: translateX(-100%);
+            }
+            to {
+                transform: translateX(100%);
+            }
+        }
+        .stock-item {
+            display: inline-block;
+            margin: 0 15px;
+            color: #f7f3f3;
+            font-family: Arial, sans-serif;
+            font-size: 3.7rem;
+        }
+        .stock-symbol {
+            font-weight: bold;
+        }
+        .stock-price {
+            margin-left: 10px;
+            color: #4caf50;
+        }
+        .stock-price.down {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="stock-bar-container">
+        <div class="stock-bar one" id="stockBar1">
+            Loading stock prices...
+        </div>
+    </div>
+    <div class="stock-bar-container">
+        <div class="stock-bar two" id="stockBar2">
+            Loading stock prices...
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = "ctl58apr01qn6d7k6bkgctl58apr01qn6d7k6bl0"; // Your Finnhub API key
+        const STOCK_SYMBOLS_ONE = ["AAPL", "GOOG", "MSFT", "AMZN", "TSLA", "NFLX"];
+        const STOCK_SYMBOLS_TWO = ["META", "NVDA", "BABA", "IBM", "ORCL", "INTC"];
+
+        async function fetchStockPrices(barId, symbols) {
+            const stockBar = document.getElementById(barId);
+            stockBar.innerHTML = ''; // Clear previous data
+
+            for (const symbol of symbols) {
+                try {
+                    const url = `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`;
+                    const response = await fetch(url);
+                    const data = await response.json();
+
+                    if (data && data.c && data.o) { // Check if data contains required fields
+                        const currentPrice = data.c; // Current price
+                        const openPrice = data.o;   // Opening price
+
+                        const stockItem = document.createElement('div');
+                        stockItem.className = 'stock-item';
+                        stockItem.innerHTML = `
+                            <span class="stock-symbol">${symbol}</span>: 
+                            <span class="stock-price ${currentPrice < openPrice ? 'down' : ''}">
+                                $${currentPrice.toFixed(2)}
+                            </span>
+                        `;
+                        stockBar.appendChild(stockItem);
+                    } else {
+                        console.error(`Unexpected data for ${symbol}:`, data);
+                        stockBar.innerHTML += `<div class="stock-item">${symbol}: No data available</div>`;
+                    }
+                } catch (error) {
+                    console.error(`Error fetching data for ${symbol}:`, error);
+                    stockBar.innerHTML += `<div class="stock-item">${symbol}: Error</div>`;
+                }
+            }
+        }
+
+        function fetchPricesForBothBars() {
+            fetchStockPrices('stockBar1', STOCK_SYMBOLS_ONE);
+            fetchStockPrices('stockBar2', STOCK_SYMBOLS_TWO);
+        }
+
+        // Fetch prices every 60 seconds
+        setInterval(fetchPricesForBothBars, 1200000);
+
+        // Initial fetch
+        fetchPricesForBothBars();
+    </script>
+</body>
+</html>
